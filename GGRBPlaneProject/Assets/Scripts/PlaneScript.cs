@@ -1,17 +1,31 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
+
+struct SteeringInput
+{
+    public float acceleration;
+    public float leftAileron;
+    public float rightAileron;
+    public float leftElevator;
+    public float rightElevator;
+    public float rudder;
+}
 
 public class PlaneScript : MonoBehaviour
 {
     GameObject m_body;
-    GameObject m_LeftAileron;
-    GameObject m_RightAileron;
-    GameObject m_LeftElevator;
-    GameObject m_RightElevator;
-    GameObject m_Rudder;
+    PlaneComponent m_LeftAileron;
+    PlaneComponent m_RightAileron;
+    PlaneComponent m_LeftElevator;
+    PlaneComponent m_RightElevator;
+    PlaneComponent m_Rudder;
 
     private Rigidbody m_RigidBody;
+
+    private SteeringInput m_SteeringInput;
     
     // Rotational forces around center of mass
     private Vector3 calculatedTorque;
@@ -21,11 +35,22 @@ public class PlaneScript : MonoBehaviour
     void Start()
     {
         m_RigidBody = GetComponent<Rigidbody>();
+        if(m_RigidBody != null)
+        {
+            m_RigidBody.excludeLayers = LayerMask.NameToLayer("PlaneLayer");
+        }
+        gameObject.layer = LayerMask.NameToLayer("PlaneLayer");
+
+        m_LeftAileron = gameObject.transform.Find("LeftAileron").GetComponent<PlaneComponent>();
+        m_RightAileron = gameObject.transform.Find("RightAileron").GetComponent<PlaneComponent>();
+
     }
 
     // Update is called once per frame
     void Update()
     {
+        //foreach(Button b : this.gameObject.in)
+        updateInputs();
         sendInputs();
 
         //////
@@ -34,12 +59,46 @@ public class PlaneScript : MonoBehaviour
 
         if(m_RigidBody != null)
         {
+            m_RigidBody.AddForce(gameObject.transform.forward * m_SteeringInput.acceleration, ForceMode.Force);
             calculateCombinedForces();
         }
     }
 
+    // TODO update this for AI input and more intuitive controls 
+    void updateInputs()
+    {
+        m_SteeringInput.acceleration = Input.GetAxis("Thrust");// - Input.GetAxis("ReverseThrust");
+        m_SteeringInput.rightAileron = Input.GetAxis("RightAileron");
+        m_SteeringInput.leftAileron = Input.GetAxis("LeftAileron");
+        m_SteeringInput.rightElevator = Input.GetAxis("RightElevator");//(Input.GetButton("RightElevatorUp") ? 1 : 0) + (Input.GetButton("RightElevatorDown") ? -1 : 0);
+        m_SteeringInput.leftElevator = Input.GetAxis("LeftElevator");//(Input.GetButton("LeftElevatorUp") ? 1 : 0) + (Input.GetButton("LeftElevatorDown") ? -1 : 0);
+        m_SteeringInput.rudder = Input.GetAxis("Rudder");//(Input.GetButton("RightRudder") ? 1 : 0) + (Input.GetButton("LeftRudder") ? -1 : 0);
+
+        
+        if (m_SteeringInput.acceleration > 0.5f) Debug.Log("Thrust\n");
+        else if (m_SteeringInput.acceleration < -0.5f) Debug.Log("RevThrust\n");
+
+        if (m_SteeringInput.rightAileron > 0.5f) Debug.Log("rightAileron\n");
+        else if (m_SteeringInput.rightAileron < -0.5f) Debug.Log("RevrightAileron\n");
+
+        if (m_SteeringInput.leftAileron > 0.5f) Debug.Log("leftAileron\n");
+        else if (m_SteeringInput.leftAileron < -0.5f) Debug.Log("RevleftAileron\n");
+
+        if (m_SteeringInput.rightElevator > 0.5f) Debug.Log("rightElevator\n");
+        else if (m_SteeringInput.rightElevator < -0.5f) Debug.Log("RevrightElevator\n");
+
+        if (m_SteeringInput.leftElevator > 0.5f) Debug.Log("leftElevator\n");
+        else if (m_SteeringInput.leftElevator < -0.5f) Debug.Log("RevleftElevator\n");
+
+        if (m_SteeringInput.rudder > 0.5f) Debug.Log("Rudder\n");
+        else if (m_SteeringInput.rudder < -0.5f) Debug.Log("RevRudder\n");
+        
+    }
+
     void sendInputs()
     {
+        if (m_LeftAileron != null)  m_LeftAileron.handleInput(m_SteeringInput.leftAileron);
+        if (m_RightAileron != null) m_RightAileron.handleInput(m_SteeringInput.rightAileron);
 
     }
 
