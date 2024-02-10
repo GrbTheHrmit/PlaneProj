@@ -6,7 +6,7 @@ using UnityEngine;
 public class PlaneComponent : MonoBehaviour
 {
     // Controlling plane object
-    private GameObject parentPlane;
+    private Rigidbody parentPlane;
 
     // Physical Attributes
     private Vector3 COM;
@@ -26,7 +26,7 @@ public class PlaneComponent : MonoBehaviour
 
     void Start()
     {
-        parentPlane = GetComponentInParent<PlaneScript>()?.gameObject;
+        parentPlane = GetComponentInParent<PlaneScript>()?.gameObject.GetComponent<Rigidbody>();
 
         gameObject.layer = LayerMask.NameToLayer("PlaneLayer");
 
@@ -46,13 +46,15 @@ public class PlaneComponent : MonoBehaviour
     public void setRudder()
     { isRudder = true; }
 
-    public Vector3 getForces()
+    public void getForces(ref Vector3 force, ref Vector3 relativePos)
     {
         ////////
         /// TODO: CALCULATE FORCES ON A WING BASED ON WORLD ORIENTATION AND velocity and physical attributes
         /// /////////
 
-        return new Vector3();
+        force = parentPlane != null ? ((isRudder ? new Vector3(-1, 0, 0) : new Vector3(0, 1, 0)) * parentPlane.velocity.magnitude * (currentAngle / maxAngle)) : new Vector3();
+        relativePos = this.gameObject.transform.localPosition;
+
     }
 
     public void handleInput(float val)

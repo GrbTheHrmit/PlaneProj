@@ -31,6 +31,11 @@ public class PlaneScript : MonoBehaviour
     private Vector3 calculatedTorque;
     private Vector3 calculatedForce;
 
+    private float maxSpeed = 1000;
+    private float maxAngSpeed = 12;
+    private float maxTorque = 1000;
+    private float scaleFactor = 10.0f;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -48,6 +53,9 @@ public class PlaneScript : MonoBehaviour
         m_Rudder = gameObject.transform.Find("Rudder")?.GetComponent<PlaneComponent>();
         if (m_Rudder != null) m_Rudder.setRudder();
 
+        calculatedForce = Vector3.zero;
+        calculatedTorque = Vector3.zero;
+
     }
 
     // Update is called once per frame
@@ -63,9 +71,29 @@ public class PlaneScript : MonoBehaviour
 
         if(m_RigidBody != null)
         {
-            m_RigidBody.AddForce(gameObject.transform.forward * m_SteeringInput.acceleration, ForceMode.Force);
+            calculatedForce += gameObject.transform.forward * m_SteeringInput.acceleration;
             calculateCombinedForces();
+
+            if (m_RigidBody.velocity.magnitude < maxSpeed * scaleFactor || Vector3.Dot(m_RigidBody.velocity, calculatedForce) < 0)
+            {
+                m_RigidBody.AddForce(calculatedForce * scaleFactor, ForceMode.Force);
+                //Debug.Log("Magnitude: " + m_RigidBody.velocity);
+                //Debug.Log("Force: " + calculatedForce);
+            }
+            if (m_RigidBody.angularVelocity.magnitude < maxAngSpeed * scaleFactor * 0.1f || Vector3.Dot(m_RigidBody.angularVelocity, calculatedTorque) < 0)
+            {
+                if(calculatedTorque.magnitude >= maxTorque)
+                {
+                    calculatedTorque = calculatedTorque.normalized * maxTorque;
+                }
+
+                m_RigidBody.AddTorque(calculatedTorque * scaleFactor * 0.05f, ForceMode.Force);
+                //Debug.Log("Magnitude: " + m_RigidBody.angularVelocity + "\nTorque: " + calculatedTorque);
+            }
+
         }
+        calculatedForce = Vector3.zero;
+        calculatedTorque = Vector3.zero;
     }
 
     // TODO update this for AI input and more intuitive controls 
@@ -112,6 +140,55 @@ public class PlaneScript : MonoBehaviour
 
     void calculateCombinedForces()
     {
+        Vector3 force = Vector3.zero;
+        Vector3 pos = Vector3.zero;
 
+        if (m_LeftAileron != null)
+        {
+            m_LeftAileron.getForces(ref force, ref pos);
+            calculatedForce += gameObject.transform.rotation * force;
+            Vector3 torqueComp = Vector3.Cross(force, pos);
+            torqueComp.x = 0;
+            torqueComp.y = 0;
+            calculatedTorque += gameObject.transform.rotation * torqueComp;
+        }
+
+        if (m_RightAileron != null)
+        {
+            m_RightAileron.getForces(ref force, ref pos);
+            calculatedForce += gameObject.transform.rotation * force;
+            Vector3 torqueComp = Vector3.Cross(force, pos);
+            torqueComp.x = 0;
+            torqueComp.y = 0;
+            calculatedTorque += gameObject.transform.rotation * Vector3.Cross(force, pos);
+        }
+
+        if (m_LeftElevator != null)
+        {
+            m_LeftElevator.getForces(ref force, ref pos);
+            calculatedForce += gameObject.transform.rotation * force;
+            Vector3 torqueComp = Vector3.Cross(force, pos);
+            torqueComp.x = 0;
+            calculatedTorque += gameObject.transform.rotation * Vector3.Cross(force, pos);
+        }
+
+        if (m_RightElevator != null)
+        {
+            m_RightElevator.getForces(ref force, ref pos);
+            calculatedForce += gameObject.transform.rotation * force;
+            Vector3 torqueComp = Vector3.Cross(force, pos);
+            torqueComp.x = 0;
+            calculatedTorque += gameObject.transform.rotation * Vector3.Cross(force, pos);
+        }
+
+        if (m_Rudder != null)
+        {
+            m_Rudder.getForces(ref force, ref pos);
+            calculatedForce += gameObject.transform.rotation * force;
+            pos.y = 0;
+            Vector3 torqueComp = Vector3.Cross(force, pos) * 100;
+            //torqueComp.z = 0;
+            calculatedTorque += gameObject.transform.rotation * Vector3.Cross(force, pos);
+        }
     }
 }
