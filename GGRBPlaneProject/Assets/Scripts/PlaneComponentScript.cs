@@ -22,19 +22,26 @@ public class PlaneComponent : MonoBehaviour
 
     private bool isRudder;
 
+    private Quaternion startRotation;
+
     void Start()
     {
+        parentPlane = GetComponentInParent<PlaneScript>()?.gameObject;
+
         gameObject.layer = LayerMask.NameToLayer("PlaneLayer");
 
         angleSpeed = 100;
         maxAngle = 45;
         currentAngle = 0;
+
+        startRotation = gameObject.transform.localRotation;
     }
 
     void Update()
     {
-        gameObject.transform.rotation = isRudder ? Quaternion.Euler(0, currentAngle, 0) : Quaternion.Euler(currentAngle, 0, 0);
+        gameObject.transform.localRotation = startRotation * (isRudder ? Quaternion.Euler(0, currentAngle, 0) : Quaternion.Euler(currentAngle, 0, 0));
     }
+
 
     public void setRudder()
     { isRudder = true; }
@@ -53,9 +60,5 @@ public class PlaneComponent : MonoBehaviour
         float scaledVal = val * maxAngle;
         float incVal = Mathf.Min(Mathf.Abs(scaledVal - currentAngle), angleSpeed);
         currentAngle += incVal * Mathf.Sign(scaledVal - currentAngle);
-
-        ///////
-        /// TODO: CHANGE VISUAL ORIENTATION OF WING
-        ///////
     }
 }
