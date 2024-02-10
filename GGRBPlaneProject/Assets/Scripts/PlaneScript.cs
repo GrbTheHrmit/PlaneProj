@@ -41,8 +41,12 @@ public class PlaneScript : MonoBehaviour
         }
         gameObject.layer = LayerMask.NameToLayer("PlaneLayer");
 
-        m_LeftAileron = gameObject.transform.Find("LeftAileron").GetComponent<PlaneComponent>();
-        m_RightAileron = gameObject.transform.Find("RightAileron").GetComponent<PlaneComponent>();
+        m_LeftAileron = gameObject.transform.Find("LeftAileron")?.GetComponent<PlaneComponent>();
+        m_RightAileron = gameObject.transform.Find("RightAileron")?.GetComponent<PlaneComponent>();
+        m_LeftElevator = gameObject.transform.Find("LeftElevator")?.GetComponent<PlaneComponent>();
+        m_RightElevator = gameObject.transform.Find("RightElevator")?.GetComponent<PlaneComponent>();
+        m_Rudder = gameObject.transform.Find("Rudder")?.GetComponent<PlaneComponent>();
+        if (m_Rudder != null) m_Rudder.setRudder();
 
     }
 
@@ -70,11 +74,11 @@ public class PlaneScript : MonoBehaviour
         m_SteeringInput.acceleration = Input.GetAxis("Thrust");// - Input.GetAxis("ReverseThrust");
         m_SteeringInput.rightAileron = Input.GetAxis("RightAileron");
         m_SteeringInput.leftAileron = Input.GetAxis("LeftAileron");
-        m_SteeringInput.rightElevator = Input.GetAxis("RightElevator");//(Input.GetButton("RightElevatorUp") ? 1 : 0) + (Input.GetButton("RightElevatorDown") ? -1 : 0);
-        m_SteeringInput.leftElevator = Input.GetAxis("LeftElevator");//(Input.GetButton("LeftElevatorUp") ? 1 : 0) + (Input.GetButton("LeftElevatorDown") ? -1 : 0);
-        m_SteeringInput.rudder = Input.GetAxis("Rudder");//(Input.GetButton("RightRudder") ? 1 : 0) + (Input.GetButton("LeftRudder") ? -1 : 0);
+        m_SteeringInput.rightElevator = -Input.GetAxis("RightElevator");//(Input.GetButton("RightElevatorUp") ? 1 : 0) + (Input.GetButton("RightElevatorDown") ? -1 : 0);
+        m_SteeringInput.leftElevator = -Input.GetAxis("LeftElevator");//(Input.GetButton("LeftElevatorUp") ? 1 : 0) + (Input.GetButton("LeftElevatorDown") ? -1 : 0);
+        m_SteeringInput.rudder = -Input.GetAxis("Rudder");//(Input.GetButton("RightRudder") ? 1 : 0) + (Input.GetButton("LeftRudder") ? -1 : 0);
 
-        
+        /*
         if (m_SteeringInput.acceleration > 0.5f) Debug.Log("Thrust\n");
         else if (m_SteeringInput.acceleration < -0.5f) Debug.Log("RevThrust\n");
 
@@ -92,6 +96,7 @@ public class PlaneScript : MonoBehaviour
 
         if (m_SteeringInput.rudder > 0.5f) Debug.Log("Rudder\n");
         else if (m_SteeringInput.rudder < -0.5f) Debug.Log("RevRudder\n");
+        */
         
     }
 
@@ -99,6 +104,9 @@ public class PlaneScript : MonoBehaviour
     {
         if (m_LeftAileron != null)  m_LeftAileron.handleInput(m_SteeringInput.leftAileron);
         if (m_RightAileron != null) m_RightAileron.handleInput(m_SteeringInput.rightAileron);
+        if (m_LeftElevator != null) m_LeftElevator.handleInput(m_SteeringInput.leftElevator);
+        if (m_RightElevator != null) m_RightElevator.handleInput(m_SteeringInput.rightElevator);
+        if (m_Rudder != null) m_Rudder.handleInput(m_SteeringInput.rudder);
 
     }
 

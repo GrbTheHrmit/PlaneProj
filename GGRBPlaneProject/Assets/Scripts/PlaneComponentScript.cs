@@ -20,8 +20,12 @@ public class PlaneComponent : MonoBehaviour
     private float angleSpeed;
     private float maxAngle;
 
+    private bool isRudder;
+
     void Start()
     {
+        gameObject.layer = LayerMask.NameToLayer("PlaneLayer");
+
         angleSpeed = 100;
         maxAngle = 45;
         currentAngle = 0;
@@ -29,8 +33,11 @@ public class PlaneComponent : MonoBehaviour
 
     void Update()
     {
-        gameObject.transform.rotation = Quaternion.Euler(currentAngle, 0, 0);
+        gameObject.transform.rotation = isRudder ? Quaternion.Euler(0, currentAngle, 0) : Quaternion.Euler(currentAngle, 0, 0);
     }
+
+    public void setRudder()
+    { isRudder = true; }
 
     public Vector3 getForces()
     {
