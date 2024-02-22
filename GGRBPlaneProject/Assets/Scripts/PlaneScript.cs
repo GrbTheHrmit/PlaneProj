@@ -35,6 +35,7 @@ public class PlaneScript : MonoBehaviour
     private float maxAngSpeed = 12;
     private float maxTorque = 1000;
     private float scaleFactor = 10.0f;
+    private float maxThrust = 50.0f;
 
     // Start is called before the first frame update
     void Start()
@@ -47,11 +48,52 @@ public class PlaneScript : MonoBehaviour
         gameObject.layer = LayerMask.NameToLayer("PlaneLayer");
 
         m_LeftAileron = gameObject.transform.Find("LeftAileron")?.GetComponent<PlaneComponent>();
+        if(m_LeftAileron != null )
+        {
+            m_LeftAileron.setSurfaceArea(50);
+            m_LeftAileron.setUpperRadius(10);
+            m_LeftAileron.setLowerRadius(10);
+            m_LeftAileron.setWingspan(8);
+            m_LeftAileron.setTorqueScale(0.2f);
+        }
+
         m_RightAileron = gameObject.transform.Find("RightAileron")?.GetComponent<PlaneComponent>();
+        if (m_RightAileron != null)
+        {
+            m_RightAileron.setSurfaceArea(50);
+            m_RightAileron.setUpperRadius(10);
+            m_RightAileron.setLowerRadius(10);
+            m_RightAileron.setWingspan(8);
+            m_RightAileron.setTorqueScale(0.2f);
+        }
         m_LeftElevator = gameObject.transform.Find("LeftElevator")?.GetComponent<PlaneComponent>();
+        if (m_LeftElevator != null)
+        {
+            m_LeftElevator.setSurfaceArea(10);
+            m_LeftElevator.setUpperRadius(10);
+            m_LeftElevator.setLowerRadius(10);
+            m_LeftElevator.setWingspan(2);
+        }
+
         m_RightElevator = gameObject.transform.Find("RightElevator")?.GetComponent<PlaneComponent>();
+        if (m_RightElevator != null)
+        {
+            m_RightElevator.setSurfaceArea(10);
+            m_RightElevator.setUpperRadius(10);
+            m_RightElevator.setLowerRadius(10);
+            m_RightElevator.setWingspan(2);
+        }
+
         m_Rudder = gameObject.transform.Find("Rudder")?.GetComponent<PlaneComponent>();
-        if (m_Rudder != null) m_Rudder.setRudder();
+        if (m_Rudder != null)
+        {
+            m_Rudder.setRudder();
+            m_Rudder.setSurfaceArea(1.5f);
+            m_Rudder.setUpperRadius(10);
+            m_Rudder.setLowerRadius(10);
+            m_Rudder.setWingspan(1);
+            m_Rudder.setTorqueScale(5);
+        }
 
         calculatedForce = Vector3.zero;
         calculatedTorque = Vector3.zero;
@@ -68,11 +110,15 @@ public class PlaneScript : MonoBehaviour
         //////
         /// TODO: CALCULATE INTEGRATED VELOCITY ESTIMATE???
         /// //
+        //Debug.Log(Time.deltaTime);
 
         if(m_RigidBody != null)
         {
-            calculatedForce += gameObject.transform.forward * m_SteeringInput.acceleration;
+            calculatedForce += gameObject.transform.forward * m_SteeringInput.acceleration * maxThrust;
             calculateCombinedForces();
+
+            calculatedForce *= 0.1f;
+            calculatedTorque *= 1.0f;
 
             if (m_RigidBody.velocity.magnitude < maxSpeed * scaleFactor || Vector3.Dot(m_RigidBody.velocity, calculatedForce) < 0)
             {
@@ -87,13 +133,24 @@ public class PlaneScript : MonoBehaviour
                     calculatedTorque = calculatedTorque.normalized * maxTorque;
                 }
 
-                m_RigidBody.AddTorque(calculatedTorque * scaleFactor * 0.05f, ForceMode.Force);
+                m_RigidBody.AddRelativeTorque(calculatedTorque * scaleFactor * 0.05f, ForceMode.Force);
                 //Debug.Log("Magnitude: " + m_RigidBody.angularVelocity + "\nTorque: " + calculatedTorque);
             }
 
         }
+
+        //Debug.Log(m_RigidBody.velocity);
+        if (m_RigidBody != null && gameObject.transform.InverseTransformDirection(m_RigidBody.velocity).z < 0) 
+        {
+            m_RigidBody.velocity = new Vector3(m_RigidBody.velocity.x, m_RigidBody.velocity.y, 0);
+        }
+
         calculatedForce = Vector3.zero;
         calculatedTorque = Vector3.zero;
+
+        
+
+        //Debug.Log(m_RigidBody.velocity);
     }
 
     // TODO update this for AI input and more intuitive controls 
@@ -147,48 +204,55 @@ public class PlaneScript : MonoBehaviour
         {
             m_LeftAileron.getForces(ref force, ref pos);
             calculatedForce += gameObject.transform.rotation * force;
-            Vector3 torqueComp = Vector3.Cross(force, pos);
-            torqueComp.x = 0;
-            torqueComp.y = 0;
-            calculatedTorque += gameObject.transform.rotation * torqueComp;
+            pos.y = 0;
+            pos.z = 0;
+            //Vector3 torqueComp = Vector3.Cross(force, pos);
+            //torqueComp.x = 0;
+            //torqueComp.y = 0;
+            calculatedTorque += Vector3.Cross(force, pos);
         }
 
         if (m_RightAileron != null)
         {
             m_RightAileron.getForces(ref force, ref pos);
             calculatedForce += gameObject.transform.rotation * force;
-            Vector3 torqueComp = Vector3.Cross(force, pos);
-            torqueComp.x = 0;
-            torqueComp.y = 0;
-            calculatedTorque += gameObject.transform.rotation * Vector3.Cross(force, pos);
+            pos.y = 0;
+            pos.z = 0;
+            //Vector3 torqueComp = Vector3.Cross(force, pos);
+            //torqueComp.x = 0;
+            //torqueComp.y = 0;
+            calculatedTorque += Vector3.Cross(force, pos);
         }
 
         if (m_LeftElevator != null)
         {
             m_LeftElevator.getForces(ref force, ref pos);
             calculatedForce += gameObject.transform.rotation * force;
-            Vector3 torqueComp = Vector3.Cross(force, pos);
-            torqueComp.x = 0;
-            calculatedTorque += gameObject.transform.rotation * Vector3.Cross(force, pos);
+            pos.y = 0;
+            //Vector3 torqueComp = Vector3.Cross(force, pos);
+           // torqueComp.x = 0;
+            calculatedTorque += Vector3.Cross(force, pos);
         }
 
         if (m_RightElevator != null)
         {
             m_RightElevator.getForces(ref force, ref pos);
             calculatedForce += gameObject.transform.rotation * force;
-            Vector3 torqueComp = Vector3.Cross(force, pos);
-            torqueComp.x = 0;
-            calculatedTorque += gameObject.transform.rotation * Vector3.Cross(force, pos);
+            pos.y = 0;
+            //Vector3 torqueComp = Vector3.Cross(force, pos);
+            //torqueComp.x = 0;
+            calculatedTorque += Vector3.Cross(force, pos);
         }
 
         if (m_Rudder != null)
         {
             m_Rudder.getForces(ref force, ref pos);
             calculatedForce += gameObject.transform.rotation * force;
+            pos.x = 0;
             pos.y = 0;
-            Vector3 torqueComp = Vector3.Cross(force, pos) * 100;
+            //Vector3 torqueComp = Vector3.Cross(force, pos) * 100;
             //torqueComp.z = 0;
-            calculatedTorque += gameObject.transform.rotation * Vector3.Cross(force, pos);
+            calculatedTorque += Vector3.Cross(force, pos);
         }
     }
 }
