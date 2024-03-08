@@ -4,8 +4,18 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
-struct SteeringInput
+public struct SteeringInput
 {
+    public SteeringInput(float accel, float lA, float rA, float lE, float rE, float rud)
+    {
+        acceleration = accel;
+        leftAileron = lA;
+        rightAileron = rA; 
+        leftElevator = lE;
+        rightElevator = rE;
+        rudder = rud;
+    }
+
     public float acceleration;
     public float leftAileron;
     public float rightAileron;
@@ -26,6 +36,8 @@ public class PlaneScript : MonoBehaviour
     private Rigidbody m_RigidBody;
 
     private SteeringInput m_SteeringInput;
+    private bool usePlayerInputs = false;
+    private AIPilot aiPilot;
     
     // Rotational forces around center of mass
     private Vector3 calculatedTorque;
@@ -98,6 +110,9 @@ public class PlaneScript : MonoBehaviour
         calculatedForce = Vector3.zero;
         calculatedTorque = Vector3.zero;
 
+        aiPilot = new AIPilot();
+        aiPilot.setPlane(this);
+        aiPilot.setRigidBody(m_RigidBody);
     }
 
     // Update is called once per frame
@@ -120,7 +135,7 @@ public class PlaneScript : MonoBehaviour
             calculatedForce *= 0.1f;
             calculatedTorque *= 1.0f;
 
-            if (m_RigidBody.velocity.magnitude < maxSpeed * scaleFactor || Vector3.Dot(m_RigidBody.velocity, calculatedForce) < 0)
+            if (m_RigidBody.velocity.magnitude < maxSpeed * scaleFactor || Vector3.Dot(gameObject.transform.InverseTransformDirection(m_RigidBody.velocity), calculatedForce) < 0)
             {
                 m_RigidBody.AddForce(calculatedForce * scaleFactor, ForceMode.Force);
                 //Debug.Log("Magnitude: " + m_RigidBody.velocity);
@@ -149,20 +164,33 @@ public class PlaneScript : MonoBehaviour
         calculatedTorque = Vector3.zero;
 
         
+        
+        Debug.Log(m_RigidBody.velocity);
+    }
 
-        //Debug.Log(m_RigidBody.velocity);
+    public void setPilot(AIPilot pilot)
+    {
+        aiPilot = pilot;
+        aiPilot.setPlane(this);
     }
 
     // TODO update this for AI input and more intuitive controls 
     void updateInputs()
     {
-        m_SteeringInput.acceleration = Input.GetAxis("Thrust");// - Input.GetAxis("ReverseThrust");
-        m_SteeringInput.rightAileron = -Input.GetAxis("RightAileron");
-        m_SteeringInput.leftAileron = -Input.GetAxis("LeftAileron");
-        m_SteeringInput.rightElevator = Input.GetAxis("RightElevator");//(Input.GetButton("RightElevatorUp") ? 1 : 0) + (Input.GetButton("RightElevatorDown") ? -1 : 0);
-        m_SteeringInput.leftElevator = Input.GetAxis("LeftElevator");//(Input.GetButton("LeftElevatorUp") ? 1 : 0) + (Input.GetButton("LeftElevatorDown") ? -1 : 0);
-        m_SteeringInput.rudder = -Input.GetAxis("Rudder");//(Input.GetButton("RightRudder") ? 1 : 0) + (Input.GetButton("LeftRudder") ? -1 : 0);
-
+        if(usePlayerInputs)
+        {
+            m_SteeringInput.acceleration = Input.GetAxis("Thrust");// - Input.GetAxis("ReverseThrust");
+            m_SteeringInput.rightAileron = -Input.GetAxis("RightAileron");
+            m_SteeringInput.leftAileron = -Input.GetAxis("LeftAileron");
+            m_SteeringInput.rightElevator = Input.GetAxis("RightElevator");//(Input.GetButton("RightElevatorUp") ? 1 : 0) + (Input.GetButton("RightElevatorDown") ? -1 : 0);
+            m_SteeringInput.leftElevator = Input.GetAxis("LeftElevator");//(Input.GetButton("LeftElevatorUp") ? 1 : 0) + (Input.GetButton("LeftElevatorDown") ? -1 : 0);
+            m_SteeringInput.rudder = -Input.GetAxis("Rudder");//(Input.GetButton("RightRudder") ? 1 : 0) + (Input.GetButton("LeftRudder") ? -1 : 0);
+        }
+        else if(aiPilot != null)
+        {
+            m_SteeringInput = aiPilot.getSteering(Time.deltaTime);
+            //Debug.Log(m_SteeringInput.acceleration);
+        }
         /*
         if (m_SteeringInput.acceleration > 0.5f) Debug.Log("Thrust\n");
         else if (m_SteeringInput.acceleration < -0.5f) Debug.Log("RevThrust\n");
@@ -204,7 +232,7 @@ public class PlaneScript : MonoBehaviour
         {
             m_LeftAileron.getForces(ref force, ref pos);
             calculatedForce += gameObject.transform.rotation * force;
-            pos.y = 0;
+            //pos.y = 0;
             pos.z = 0;
             //Vector3 torqueComp = Vector3.Cross(force, pos);
             //torqueComp.x = 0;
@@ -216,7 +244,7 @@ public class PlaneScript : MonoBehaviour
         {
             m_RightAileron.getForces(ref force, ref pos);
             calculatedForce += gameObject.transform.rotation * force;
-            pos.y = 0;
+            //pos.y = 0;
             pos.z = 0;
             //Vector3 torqueComp = Vector3.Cross(force, pos);
             //torqueComp.x = 0;
@@ -228,9 +256,9 @@ public class PlaneScript : MonoBehaviour
         {
             m_LeftElevator.getForces(ref force, ref pos);
             calculatedForce += gameObject.transform.rotation * force;
-            pos.y = 0;
+            //pos.y = 0;
             //Vector3 torqueComp = Vector3.Cross(force, pos);
-           // torqueComp.x = 0;
+            //torqueComp.x = 0;
             calculatedTorque += Vector3.Cross(force, pos);
         }
 
@@ -238,7 +266,7 @@ public class PlaneScript : MonoBehaviour
         {
             m_RightElevator.getForces(ref force, ref pos);
             calculatedForce += gameObject.transform.rotation * force;
-            pos.y = 0;
+            //pos.y = 0;
             //Vector3 torqueComp = Vector3.Cross(force, pos);
             //torqueComp.x = 0;
             calculatedTorque += Vector3.Cross(force, pos);
@@ -248,7 +276,7 @@ public class PlaneScript : MonoBehaviour
         {
             m_Rudder.getForces(ref force, ref pos);
             calculatedForce += gameObject.transform.rotation * force;
-            pos.x = 0;
+            //pos.x = 0;
             pos.y = 0;
             //Vector3 torqueComp = Vector3.Cross(force, pos) * 100;
             //torqueComp.z = 0;

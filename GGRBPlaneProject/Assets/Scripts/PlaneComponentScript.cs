@@ -84,7 +84,7 @@ public class PlaneComponent : MonoBehaviour
         float liftCoeff = 2 * 3.142f * (aspectRatio / (aspectRatio + 2.0f)) * (currentAngle / maxAngle);
 
         float forwardVelocity = Mathf.Max(parentPlane.gameObject.transform.InverseTransformDirection(parentPlane.velocity).z, 0);
-        Debug.Log(parentPlane.velocity);
+        //Debug.Log(parentPlane.velocity);
         // Calculate lift force
         Vector3 lift = (isRudder ? new Vector3(1, 0, 0) : new Vector3(0, -1, 0)) * Mathf.Pow(forwardVelocity, 2) * liftCoeff * surfaceArea * forceCoeff;
 
