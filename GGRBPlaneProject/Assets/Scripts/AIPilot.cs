@@ -8,6 +8,8 @@ public class AIPilot : ScriptableObject
     private PlaneScript m_plane;
     private Rigidbody m_rigidbody;
 
+    private Vector3 target;
+
     private SteeringInput lastInput;
     private Vector3 lastVel;
     private Vector3 lastAngVel;
@@ -20,6 +22,7 @@ public class AIPilot : ScriptableObject
     {
         lastInput = new SteeringInput();
         lastVel = new Vector3(0,0,0);
+        target = new Vector3(100, 500, -500);
     }
 
     // Update is called once per frame
@@ -33,6 +36,9 @@ public class AIPilot : ScriptableObject
 
     public void setRigidBody(Rigidbody rb)
     { m_rigidbody = rb; }
+
+    public void setTarget(Vector3 t)
+    { target = t; }
 
     private SteeringInput holdSpeed()
     {
@@ -85,14 +91,44 @@ public class AIPilot : ScriptableObject
         return input;
     }
 
+    private SteeringInput SeekTarget()
+    {
+        SteeringInput input = lastInput;
+        input.acceleration = 1;
+        Vector3 forwardVec = m_rigidbody.transform.forward;
+        Vector3 targetVec = (target - m_rigidbody.transform.position).normalized;
+        //Debug.Log("forward: " + forwardVec);
+        //Debug.Log("target: " + targetVec);
+
+        float pitchDelta = Mathf.Acos(Vector2.Dot(new Vector2(forwardVec.z, forwardVec.y).normalized, new Vector2(targetVec.z, targetVec.y).normalized));
+        pitchDelta -= Mathf.PI * 0.5f;
+        //Debug.Log(pitchDelta);
+
+        //if (pitchDelta < m_rigidbody.angularVelocity.x)
+        //{
+            input.rightElevator += pitchDelta * 0.001f;
+            input.leftElevator += pitchDelta * 0.001f;
+            //Debug.Log(pitchDelta);
+        //}
+
+        return input;
+
+    }
+
     public SteeringInput getSteering(float dt)
     {
         SteeringInput input = new SteeringInput();
         if(m_plane != null)
         {
-            input = holdAltitude();
+            //input = holdAltitude();
+            input = SeekTarget();
         }
-        
+
+        input.leftAileron = Mathf.Clamp(input.leftAileron, -1, 1);
+        input.rightAileron = Mathf.Clamp(input.rightAileron, -1, 1);
+        input.leftElevator = Mathf.Clamp(input.leftElevator, -1, 1);
+        input.rightElevator = Mathf.Clamp(input.rightElevator, -1, 1);
+
         lastInput = input;
         return input;
     }

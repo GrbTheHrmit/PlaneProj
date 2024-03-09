@@ -18,7 +18,7 @@ public class AIManager : MonoBehaviour
         GameObject p = Instantiate(planeObj);
 
         planes[0] = p.GetComponent<PlaneScript>() ;
-        planes[0].gameObject.transform.position = new Vector3 (0, 100, 0);
+        planes[0].gameObject.transform.position = new Vector3 (100, 100, 100);
         //pilot.setPlane(planes[0]);
         //planes[0].setPilot();
     }

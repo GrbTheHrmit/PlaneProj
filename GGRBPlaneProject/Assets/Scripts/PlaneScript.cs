@@ -165,7 +165,7 @@ public class PlaneScript : MonoBehaviour
 
         
         
-        Debug.Log(m_RigidBody.velocity);
+        //Debug.Log(m_RigidBody.velocity);
     }
 
     public void setPilot(AIPilot pilot)
