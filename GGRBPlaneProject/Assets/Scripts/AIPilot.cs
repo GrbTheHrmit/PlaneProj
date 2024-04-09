@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class AIPilot : ScriptableObject
 {
+
     private PlaneScript m_plane;
     private Rigidbody m_rigidbody;
 
@@ -20,9 +21,15 @@ public class AIPilot : ScriptableObject
     // Start is called before the first frame update
     void Start()
     {
+        
+        
+    }
+
+    private void Awake()
+    {
         lastInput = new SteeringInput();
-        lastVel = new Vector3(0,0,0);
-        target = new Vector3(100, 500, -500);
+        lastVel = new Vector3(0, 0, 0);
+        target = new Vector3(100, 500, 500);
     }
 
     // Update is called once per frame
@@ -39,6 +46,8 @@ public class AIPilot : ScriptableObject
 
     public void setTarget(Vector3 t)
     { target = t; }
+
+    public Vector3 getTarget() { return target; }
 
     private SteeringInput holdSpeed()
     {
@@ -100,16 +109,23 @@ public class AIPilot : ScriptableObject
         //Debug.Log("forward: " + forwardVec);
         //Debug.Log("target: " + targetVec);
 
-        float pitchDelta = Mathf.Acos(Vector2.Dot(new Vector2(forwardVec.z, forwardVec.y).normalized, new Vector2(targetVec.z, targetVec.y).normalized));
-        pitchDelta -= Mathf.PI * 0.5f;
-        //Debug.Log(pitchDelta);
+        float pitchDelta = Mathf.Atan2(forwardVec.z, forwardVec.y) - Mathf.Atan2(targetVec.z, targetVec.y);
+        pitchDelta = 0.1f * pitchDelta / Mathf.PI;
 
-        //if (pitchDelta < m_rigidbody.angularVelocity.x)
-        //{
-            input.rightElevator += pitchDelta * 0.001f;
-            input.leftElevator += pitchDelta * 0.001f;
-            //Debug.Log(pitchDelta);
-        //}
+        if(Mathf.Abs(pitchDelta) < Mathf.Abs(m_rigidbody.angularVelocity.x * 0.1f / Mathf.PI) && Mathf.Sign(pitchDelta) != Mathf.Sign(m_rigidbody.angularVelocity.x))
+        {
+            input.rightElevator -= pitchDelta;// * 0.01f;
+            input.leftElevator -= pitchDelta;// * 0.01f;
+            Debug.Log("dec");
+        }
+        else
+        {
+            input.rightElevator += pitchDelta;
+            input.leftElevator += pitchDelta;
+        }
+
+        Debug.Log("vel " + m_rigidbody.angularVelocity.x);
+        Debug.Log(pitchDelta);
 
         return input;
 

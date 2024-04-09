@@ -26,6 +26,8 @@ public struct SteeringInput
 
 public class PlaneScript : MonoBehaviour
 {
+    public GameObject target;
+
     GameObject m_body;
     PlaneComponent m_LeftAileron;
     PlaneComponent m_RightAileron;
@@ -110,9 +112,8 @@ public class PlaneScript : MonoBehaviour
         calculatedForce = Vector3.zero;
         calculatedTorque = Vector3.zero;
 
-        aiPilot = new AIPilot();
-        aiPilot.setPlane(this);
-        aiPilot.setRigidBody(m_RigidBody);
+        setPilot(ScriptableObject.CreateInstance<AIPilot>());
+        //Debug.Log(t.transform.position);
     }
 
     // Update is called once per frame
@@ -172,6 +173,15 @@ public class PlaneScript : MonoBehaviour
     {
         aiPilot = pilot;
         aiPilot.setPlane(this);
+        aiPilot.setRigidBody(m_RigidBody);
+        GameObject t = Instantiate(target, pilot.getTarget(), Quaternion.identity);
+    }
+
+    public void setTarget(Vector3 t)
+    {
+        GameObject tar = Instantiate(target);
+        tar.transform.position = t;
+        Debug.Log(t);
     }
 
     // TODO update this for AI input and more intuitive controls 
