@@ -29,7 +29,7 @@ public class AIPilot : ScriptableObject
     {
         lastInput = new SteeringInput();
         lastVel = new Vector3(0, 0, 0);
-        target = new Vector3(100, 500, 500);
+        target = new Vector3(500, 500, 500);
     }
 
     // Update is called once per frame
@@ -103,6 +103,76 @@ public class AIPilot : ScriptableObject
     private SteeringInput SeekTarget()
     {
         SteeringInput input = lastInput;
+        if (Vector3.Dot(m_rigidbody.transform.forward, target - m_rigidbody.transform.position) > 0)
+        {
+            input = SeekElevators(lastInput);
+            input = SeekRudder(input);
+            input = SeekAilerons(input);
+        }
+        
+        return input;
+    }
+
+    private SteeringInput LevelOut(SteeringInput input)
+    {
+        Vector3 right = m_rigidbody.transform.right;
+        if(Mathf.Abs(right.y) > 0.01f)
+        {
+            float val = Mathf.Sign(right.y) * Mathf.Clamp(Mathf.Abs(right.y) * 0.1f, 0.1f, 1);
+            input.leftAileron = -val;
+            input.rightAileron = val;
+            Debug.Log("Leveling " + val);
+        }
+        else
+        {
+            input.leftAileron = 0;
+            input.rightAileron = 0;
+        }
+
+        return input;
+    }
+
+    private SteeringInput SeekAilerons(SteeringInput input)
+    {
+        input.acceleration = 1;
+        Vector3 forwardVec = m_rigidbody.transform.forward;
+        Vector3 targetVec = (target - m_rigidbody.transform.position).normalized;
+        //Debug.Log("forward: " + forwardVec);
+        //Debug.Log("target: " + targetVec);
+
+        //float pitchDelta = Mathf.Atan2(forwardVec.y, forwardVec.x) - Mathf.Atan2(targetVec.y, targetVec.x);
+        float pitchDelta = Mathf.Atan2(forwardVec.z, forwardVec.x) - Mathf.Atan2(targetVec.z, targetVec.x);
+
+        if (Mathf.Abs(pitchDelta) > 0.01f && !((Mathf.Sign(pitchDelta) < 0 && m_rigidbody.transform.right.y > 0.9f) || (Mathf.Sign(pitchDelta) > 0 && m_rigidbody.transform.right.y < -0.9f)))
+        {
+            pitchDelta = 0.1f * pitchDelta / Mathf.PI;
+
+            input.rightAileron = pitchDelta;
+            input.leftAileron = -pitchDelta;
+            //Debug.Log("dec");
+        }
+        else
+        {
+            input = LevelOut(input);
+
+            Vector4 diffVec = Quaternion.Inverse(m_rigidbody.transform.rotation) * targetVec;
+            if(Mathf.Abs(diffVec.y) > 0.01f)
+            {
+                input.rightAileron -= diffVec.y * 0.01f;
+                input.leftAileron -= diffVec.y * 0.01f;
+                //Debug.Log("incline change");
+            }
+        }
+        
+
+        //Debug.Log("vel " + m_rigidbody.angularVelocity.x);
+       // Debug.Log(pitchDelta);
+
+        return input;
+    }
+
+    private SteeringInput SeekElevators(SteeringInput input)
+    {
         input.acceleration = 1;
         Vector3 forwardVec = m_rigidbody.transform.forward;
         Vector3 targetVec = (target - m_rigidbody.transform.position).normalized;
@@ -110,25 +180,43 @@ public class AIPilot : ScriptableObject
         //Debug.Log("target: " + targetVec);
 
         float pitchDelta = Mathf.Atan2(forwardVec.z, forwardVec.y) - Mathf.Atan2(targetVec.z, targetVec.y);
-        pitchDelta = 0.1f * pitchDelta / Mathf.PI;
+        pitchDelta = pitchDelta / Mathf.PI;
 
-        if(Mathf.Abs(pitchDelta) < Mathf.Abs(m_rigidbody.angularVelocity.x * 0.1f / Mathf.PI) && Mathf.Sign(pitchDelta) != Mathf.Sign(m_rigidbody.angularVelocity.x))
+        /*if (Mathf.Abs(pitchDelta) < Mathf.Abs(m_rigidbody.angularVelocity.x * 0.1f / Mathf.PI) && Mathf.Sign(pitchDelta) != Mathf.Sign(m_rigidbody.angularVelocity.x))
         {
-            input.rightElevator -= pitchDelta;// * 0.01f;
-            input.leftElevator -= pitchDelta;// * 0.01f;
-            Debug.Log("dec");
+            input.rightElevator = -pitchDelta;
+            input.leftElevator = -pitchDelta;
+            //Debug.Log("dec");
         }
         else
-        {
-            input.rightElevator += pitchDelta;
-            input.leftElevator += pitchDelta;
-        }
+        {*/
+            input.rightElevator = pitchDelta;
+            input.leftElevator = pitchDelta;
+        //}
 
-        Debug.Log("vel " + m_rigidbody.angularVelocity.x);
-        Debug.Log(pitchDelta);
+        //Debug.Log("vel " + m_rigidbody.angularVelocity.x);
+        //Debug.Log(pitchDelta);
 
         return input;
+    }
 
+    private SteeringInput SeekRudder(SteeringInput input)
+    {
+        input.acceleration = 1;
+        Vector3 forwardVec = m_rigidbody.transform.forward;
+        Vector3 targetVec = (target - m_rigidbody.transform.position).normalized;
+        //Debug.Log("forward: " + forwardVec);
+        //Debug.Log("target: " + targetVec);
+
+        float pitchDelta = Mathf.Atan2(forwardVec.z, forwardVec.x) - Mathf.Atan2(targetVec.z, targetVec.x);
+        pitchDelta = pitchDelta / Mathf.PI;
+
+
+        input.rudder = -pitchDelta;
+
+        //Debug.Log("rudding " + pitchDelta);
+
+        return input;
     }
 
     public SteeringInput getSteering(float dt)

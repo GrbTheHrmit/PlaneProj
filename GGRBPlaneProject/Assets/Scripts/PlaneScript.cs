@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
@@ -22,6 +23,10 @@ public struct SteeringInput
     public float leftElevator;
     public float rightElevator;
     public float rudder;
+
+    public static SteeringInput operator +(SteeringInput a, SteeringInput b)
+    => new SteeringInput(a.acceleration + b.acceleration, a.leftAileron + b.leftAileron, a.rightAileron + b.rightAileron,
+        a.leftElevator + b.leftElevator, a.rightElevator + b.rightElevator, a.rudder + b.rudder);
 }
 
 public class PlaneScript : MonoBehaviour
