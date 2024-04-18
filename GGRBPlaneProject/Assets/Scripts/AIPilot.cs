@@ -30,7 +30,7 @@ public class AIPilot : ScriptableObject
     {
         lastInput = new SteeringInput();
         lastVel = new Vector3(0, 0, 0);
-        target = new Vector3(500, 500, -500);
+        //target = new Vector3(0, 500, -500);
     }
 
     // Update is called once per frame
@@ -103,7 +103,7 @@ public class AIPilot : ScriptableObject
         {
 
             float yVel = m_rigidbody.transform.InverseTransformDirection(m_rigidbody.velocity).y;
-            Debug.Log(yVel);
+            //Debug.Log(yVel);
             if (yVel > 1.0f)
             {
                 input.rightAileron += 0.001f * Mathf.Abs(yVel);
@@ -128,7 +128,8 @@ public class AIPilot : ScriptableObject
             input = SeekElevators(input, target);
             input = SeekRudder(input, target);
             input = SeekAilerons(input, target);
-        //input = holdAltitude(input);
+            input = holdIncline(input);
+            input = holdAltitude(input);
         }
         else
         {
@@ -136,6 +137,18 @@ public class AIPilot : ScriptableObject
             input = TurnAround(input, target);
         }
         
+        return input;
+    }
+
+    private SteeringInput alignAilerons(SteeringInput input, Vector3 tar)
+    {
+        Vector3 upVec = new Vector3(0, 1, 0);
+        Vector3 targetVec = m_rigidbody.transform.InverseTransformDirection((target - m_rigidbody.transform.position).normalized);
+        float pitchDelta = distBetweenRads(Mathf.Atan2(targetVec.y, targetVec.x), Mathf.Atan2(upVec.y, upVec.x));
+        pitchDelta = pitchDelta / Mathf.PI;
+
+        input.rightAileron += -pitchDelta;
+        input.leftAileron += pitchDelta;
         return input;
     }
 
@@ -168,45 +181,14 @@ public class AIPilot : ScriptableObject
 
                 pitchDelta = pitchDelta / Mathf.PI;
 
-                input.rightAileron += -pitchDelta;
-                input.leftAileron += pitchDelta;
+                input.rightAileron += -pitchDelta * 0.1f;
+                input.leftAileron += pitchDelta * 0.1f;
                 //Debug.Log("pitching");
 
-            }
-            else
-            {
-
-                /*Vector4 diffVec = targetVec;
-                if (Mathf.Abs(diffVec.y) > 0.01f)
-                {
-                    input.rightAileron -= diffVec.y;// * 0.1f;
-                    input.leftAileron -= diffVec.y;// * 0.1f;
-                    Debug.Log("upping " + diffVec.y);
-                }
-                else
-                {
-                    input.rightAileron = -1;
-                    input.leftAileron = -1;
-                }*/
-
-                input = LevelOut(input);
-                
             }
         }
         else
         {
-            /*Vector4 diffVec = Quaternion.Inverse(m_rigidbody.transform.rotation) * targetVec;
-            if (Mathf.Abs(diffVec.y) > 0.01f)
-            {
-                input.rightAileron -= diffVec.y;// * 0.1f;
-                input.leftAileron -= diffVec.y;// * 0.1f;
-                //Debug.Log("upping " + diffVec.y);
-            }
-            else
-            {
-                input.rightAileron = -1;
-                input.leftAileron = -1;
-            }*/
 
             input = LevelOut(input);
 
@@ -214,12 +196,10 @@ public class AIPilot : ScriptableObject
         Vector4 diffVec = targetVec;
         if (Mathf.Abs(diffVec.y) > 0.01f)
         {
-            input.rightAileron -= diffVec.y * 0.1f;
-            input.leftAileron -= diffVec.y * 0.1f;
+            input.rightAileron -= diffVec.y * 0.01f;
+            input.leftAileron -= diffVec.y * 0.01f;
             //Debug.Log("upping " + diffVec.y);
         }
-
-        input = holdIncline(input);
 
 
         //Debug.Log("vel " + m_rigidbody.angularVelocity.x);
@@ -241,17 +221,9 @@ public class AIPilot : ScriptableObject
         //Debug.Log(pitchDelta);
         pitchDelta = pitchDelta / Mathf.PI;
 
-        /*if (Mathf.Abs(pitchDelta) < Mathf.Abs(m_rigidbody.angularVelocity.x * 0.1f / Mathf.PI) && Mathf.Sign(pitchDelta) != Mathf.Sign(m_rigidbody.angularVelocity.x))
-        {
-            input.rightElevator = -pitchDelta;
-            input.leftElevator = -pitchDelta;
-            //Debug.Log("dec");
-        }
-        else
-        {*/
-            input.rightElevator = pitchDelta;
-            input.leftElevator = pitchDelta;
-        //}
+        input.rightElevator = pitchDelta;
+        input.leftElevator = pitchDelta;
+
 
         //Debug.Log("vel " + m_rigidbody.angularVelocity.x);
         
@@ -294,13 +266,13 @@ public class AIPilot : ScriptableObject
 
         Vector3 adjTarget = m_rigidbody.transform.forward;
 
-        if(Mathf.Abs(deltaY) > Mathf.Abs(deltaZ) && Mathf.Abs(deltaY) > Mathf.Abs(deltaX))
+        if(Mathf.Abs(deltaY) < Mathf.Abs(deltaZ) && Mathf.Abs(deltaY) < Mathf.Abs(deltaX))
         {
             float xRatio = deltaX / Mathf.Abs(deltaY);
             float zRatio = deltaZ / Mathf.Abs(deltaY);
             adjTarget = Quaternion.Euler(xRatio, Mathf.Sign(deltaY), zRatio) * target * 100 + m_rigidbody.position;
         }
-        else if (Mathf.Abs(deltaX) > Mathf.Abs(deltaZ) && Mathf.Abs(deltaX) > Mathf.Abs(deltaY))
+        else if (Mathf.Abs(deltaX) < Mathf.Abs(deltaZ) && Mathf.Abs(deltaX) < Mathf.Abs(deltaY))
         {
             float yRatio = deltaY / Mathf.Abs(deltaX);
             float zRatio = deltaZ / Mathf.Abs(deltaX);

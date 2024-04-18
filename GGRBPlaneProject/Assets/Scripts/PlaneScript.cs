@@ -57,12 +57,12 @@ public class PlaneScript : MonoBehaviour
     private float maxThrust = 50.0f;
 
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         m_RigidBody = GetComponent<Rigidbody>();
         if(m_RigidBody != null)
         {
-            m_RigidBody.excludeLayers = LayerMask.NameToLayer("PlaneLayer");
+            //m_RigidBody.excludeLayers = LayerMask.NameToLayer("PlaneLayer");
         }
         gameObject.layer = LayerMask.NameToLayer("PlaneLayer");
 
@@ -91,7 +91,7 @@ public class PlaneScript : MonoBehaviour
             m_LeftElevator.setSurfaceArea(10);
             m_LeftElevator.setUpperRadius(10);
             m_LeftElevator.setLowerRadius(10);
-            m_LeftElevator.setWingspan(2);
+            m_LeftElevator.setWingspan(4);
         }
 
         m_RightElevator = gameObject.transform.Find("RightElevator")?.GetComponent<PlaneComponent>();
@@ -100,7 +100,7 @@ public class PlaneScript : MonoBehaviour
             m_RightElevator.setSurfaceArea(10);
             m_RightElevator.setUpperRadius(10);
             m_RightElevator.setLowerRadius(10);
-            m_RightElevator.setWingspan(2);
+            m_RightElevator.setWingspan(4);
         }
 
         m_Rudder = gameObject.transform.Find("Rudder")?.GetComponent<PlaneComponent>();
@@ -116,10 +116,8 @@ public class PlaneScript : MonoBehaviour
 
         calculatedForce = Vector3.zero;
         calculatedTorque = Vector3.zero;
-
-        setPilot(ScriptableObject.CreateInstance<AIPilot>());
-        //Debug.Log(t.transform.position);
     }
+
 
     // Update is called once per frame
     void Update()
@@ -131,15 +129,15 @@ public class PlaneScript : MonoBehaviour
         //////
         /// TODO: CALCULATE INTEGRATED VELOCITY ESTIMATE???
         /// //
-        //Debug.Log(Time.deltaTime);
+        Debug.Log(Time.deltaTime);
 
         if(m_RigidBody != null)
         {
             calculatedForce += gameObject.transform.forward * m_SteeringInput.acceleration * maxThrust;
             calculateCombinedForces();
 
-            calculatedForce *= 0.1f;
-            calculatedTorque *= 1.0f;
+            calculatedForce *= 0.1f * (Time.deltaTime * 1000);
+            calculatedTorque *= 1.0f * gameObject.transform.localScale.x * (Time.deltaTime * 1000);
 
             if (m_RigidBody.velocity.magnitude < maxSpeed * scaleFactor || Vector3.Dot(gameObject.transform.InverseTransformDirection(m_RigidBody.velocity), calculatedForce) < 0)
             {
@@ -176,17 +174,22 @@ public class PlaneScript : MonoBehaviour
 
     public void setPilot(AIPilot pilot)
     {
+        //Debug.Log("set pilot");
         aiPilot = pilot;
         aiPilot.setPlane(this);
         aiPilot.setRigidBody(m_RigidBody);
-        GameObject t = Instantiate(target, pilot.getTarget(), Quaternion.identity);
     }
 
     public void setTarget(Vector3 t)
     {
-        GameObject tar = Instantiate(target);
-        tar.transform.position = t;
-        Debug.Log(t);
+        //ssssssDebug.Log(t);
+        //GameObject tar = Instantiate(target, t, Quaternion.identity);
+        aiPilot.setTarget(t);   
+    }
+
+    public Vector3 getTarget()
+    {
+        return aiPilot.getTarget();
     }
 
     // TODO update this for AI input and more intuitive controls 
