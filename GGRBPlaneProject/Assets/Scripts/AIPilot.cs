@@ -178,7 +178,7 @@ public class AIPilot : ScriptableObject
     private SteeringInput SeekAilerons(SteeringInput input, Vector3 tar)
     {
         input.acceleration = 1;
-        Vector3 upVec = new Vector3(0, 1, 0);
+        Vector3 upVec = new Vector3(0, 0,1);
         Vector3 targetVec = m_rigidbody.transform.InverseTransformDirection((tar - m_rigidbody.transform.position).normalized);
 
         //float pitchDelta = distBetweenRads(Mathf.Atan2(targetVec.y, targetVec.x), Mathf.Atan2(upVec.y, upVec.x));
@@ -287,25 +287,7 @@ public class AIPilot : ScriptableObject
         //Debug.Log("deltay " + deltaY);
         //Debug.Log("deltaz " + deltaZ);
 
-        Vector3 adjTarget = forwardVec;
-
-        /*if(Mathf.Abs(deltaY) > Mathf.Abs(deltaX) && Mathf.Abs(deltaY) > Mathf.Abs(deltaZ))
-        {
-            deltaX = deltaX / Mathf.Abs(deltaY);
-            deltaZ = deltaZ / Mathf.Abs(deltaY);
-        }
-        else if(Mathf.Abs(deltaX) > Mathf.Abs(deltaZ) && Mathf.Abs(deltaX) > Mathf.Abs(deltaY))
-        {
-            deltaY = deltaY / Mathf.Abs(deltaX);
-            deltaZ = deltaZ / Mathf.Abs(deltaX);
-        }
-        else
-        {
-            deltaX = deltaX / Mathf.Abs(deltaZ);
-            deltaY = deltaY / Mathf.Abs(deltaZ);
-        }*/
-
-        adjTarget = targetVec * 100 + m_rigidbody.position;
+        Vector3 adjTarget = targetVec * 100 + m_rigidbody.position;
         //Debug.Log(adjTarget);
         //Debug.Log(targetVec * 100 + m_rigidbody.position);
 
