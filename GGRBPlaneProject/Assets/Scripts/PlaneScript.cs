@@ -32,6 +32,7 @@ public struct SteeringInput
 public class PlaneScript : MonoBehaviour
 {
     public GameObject target;
+    public GameObject tracker;
 
     GameObject m_body;
     PlaneComponent m_LeftAileron;
@@ -43,8 +44,10 @@ public class PlaneScript : MonoBehaviour
     private Rigidbody m_RigidBody;
 
     private SteeringInput m_SteeringInput;
-    private bool usePlayerInputs = false;
+    private bool usePlayerInputs = true;
     private AIPilot aiPilot;
+
+    private GameObject myTracker;
     
     // Rotational forces around center of mass
     private Vector3 calculatedTorque;
@@ -129,7 +132,7 @@ public class PlaneScript : MonoBehaviour
         //////
         /// TODO: CALCULATE INTEGRATED VELOCITY ESTIMATE???
         /// //
-        Debug.Log(Time.deltaTime);
+        //Debug.Log(Time.deltaTime);
 
         if(m_RigidBody != null)
         {
@@ -167,6 +170,13 @@ public class PlaneScript : MonoBehaviour
         calculatedForce = Vector3.zero;
         calculatedTorque = Vector3.zero;
 
+        if(!usePlayerInputs)
+        {
+            myTracker.transform.forward = (getTarget() - this.gameObject.transform.position).normalized;
+            myTracker.transform.position = 0.5f * (getTarget() + this.gameObject.transform.position);
+            myTracker.transform.localScale = new Vector3(1, 1, (getTarget() - this.gameObject.transform.position).magnitude);
+        }
+        
         
         
         //Debug.Log(m_RigidBody.velocity);
@@ -175,6 +185,9 @@ public class PlaneScript : MonoBehaviour
     public void setPilot(AIPilot pilot)
     {
         //Debug.Log("set pilot");
+        myTracker = Instantiate(tracker);
+        maxThrust = 75;
+        usePlayerInputs = false;
         aiPilot = pilot;
         aiPilot.setPlane(this);
         aiPilot.setRigidBody(m_RigidBody);
