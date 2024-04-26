@@ -56,6 +56,7 @@ public class PlaneScript : MonoBehaviour
     private float maxSpeed = 1000;
     private float maxAngSpeed = 12;
     private float maxTorque = 1000;
+    private float maxForce = 1000;
     private float scaleFactor = 10.0f;
     private float maxThrust = 50.0f;
 
@@ -142,19 +143,26 @@ public class PlaneScript : MonoBehaviour
             calculatedForce *= 0.1f * (Time.deltaTime * 1000);
             calculatedTorque *= 1.0f * gameObject.transform.localScale.x * (Time.deltaTime * 1000);
 
-            if (m_RigidBody.velocity.magnitude < maxSpeed * scaleFactor || Vector3.Dot(gameObject.transform.InverseTransformDirection(m_RigidBody.velocity), calculatedForce) < 0)
+            bool isNan = float.IsNaN(calculatedForce.x) || float.IsNaN(calculatedForce.y) || float.IsNaN(calculatedForce.z);
+            if ((m_RigidBody.velocity.magnitude < maxSpeed * scaleFactor || Vector3.Dot(m_RigidBody.velocity, calculatedForce) < 0) && !isNan)
             {
+                if (calculatedForce.magnitude >= maxForce)
+                {
+                    calculatedForce = calculatedForce.normalized * maxForce;
+                }
                 m_RigidBody.AddForce(calculatedForce * scaleFactor, ForceMode.Force);
                 //Debug.Log("Magnitude: " + m_RigidBody.velocity);
                 //Debug.Log("Force: " + calculatedForce);
             }
-            if (m_RigidBody.angularVelocity.magnitude < maxAngSpeed * scaleFactor * 0.1f || Vector3.Dot(m_RigidBody.angularVelocity, calculatedTorque) < 0)
+
+            isNan = float.IsNaN(calculatedTorque.x) || float.IsNaN(calculatedTorque.y) || float.IsNaN(calculatedTorque.z);
+            if ((m_RigidBody.angularVelocity.magnitude < maxAngSpeed * scaleFactor * 0.1f || Vector3.Dot(m_RigidBody.angularVelocity, calculatedTorque) < 0) && !isNan)
             {
                 if(calculatedTorque.magnitude >= maxTorque)
                 {
                     calculatedTorque = calculatedTorque.normalized * maxTorque;
                 }
-
+                
                 m_RigidBody.AddRelativeTorque(calculatedTorque * scaleFactor * 0.05f, ForceMode.Force);
                 //Debug.Log("Magnitude: " + m_RigidBody.angularVelocity + "\nTorque: " + calculatedTorque);
             }

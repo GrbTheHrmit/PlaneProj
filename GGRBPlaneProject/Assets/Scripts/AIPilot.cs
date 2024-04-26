@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Properties;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UIElements;
 
 public class AIPilot : ScriptableObject
@@ -163,7 +164,7 @@ public class AIPilot : ScriptableObject
     {
         Vector3 right = m_rigidbody.transform.right;
         Vector3 up = m_rigidbody.transform.up;
-        if(Mathf.Abs(right.y) > 0.1f)// || up.y < 0)
+        if(Mathf.Abs(right.y) > 0.1f || up.y < 0)
         {
             float val = Mathf.Sign(right.y) * Mathf.Clamp(Mathf.Abs(right.y), 0.1f, 1);
             input.leftAileron = -val * 0.1f;
@@ -184,7 +185,8 @@ public class AIPilot : ScriptableObject
         float pitchDelta = Mathf.PI * Quaternion.FromToRotation(targetVec, upVec).eulerAngles.y / 180;
         pitchDelta = remapRad(pitchDelta);
 
-        if (Mathf.Abs(targetVec.z) < 0.9f && Mathf.Abs(pitchDelta) > 0.1f)
+        //Mathf.Abs(targetVec.z) < 0.9f &&
+        if (Mathf.Abs(targetVec.z) < 0.92f && Mathf.Abs(pitchDelta) > 0.1f)
         {
             pitchDelta = pitchDelta / Mathf.PI;
 
@@ -226,13 +228,15 @@ public class AIPilot : ScriptableObject
         pitchDelta = remapRad(pitchDelta);
         //float pitchDelta = distBetweenRads(Mathf.Atan2(targetVec.y, targetVec.z), Mathf.Atan2(forwardVec.y, forwardVec.z));
         //Debug.Log(pitchDelta);
+
+        
         pitchDelta = pitchDelta / Mathf.PI;
 
-        if (targetVec.y < 0) pitchDelta = -pitchDelta;
-        
-        input.rightElevator = pitchDelta;
-        input.leftElevator = pitchDelta;
+        //if (targetVec.y < 0) pitchDelta = -pitchDelta;
 
+        input.rightElevator = pitchDelta;// * 0.1f;
+        input.leftElevator = pitchDelta;// * 0.1f;
+        
 
         //Debug.Log("vel " + m_rigidbody.angularVelocity.x);
         
@@ -265,10 +269,12 @@ public class AIPilot : ScriptableObject
     {
         input.acceleration = 1;
         Vector3 forwardVec = new Vector3(0, 0, 1);
-        Vector3 targetVec = m_rigidbody.transform.InverseTransformDirection((tar - m_rigidbody.transform.position).normalized);
-        targetVec.z = 0;
+        Vector3 targetVec = (tar - m_rigidbody.transform.position);
+        //targetVec.y = Mathf.Abs(targetVec.y);
+        targetVec.z = 5;
         targetVec = targetVec.normalized;
         Quaternion q = Quaternion.FromToRotation(forwardVec, targetVec);
+        Debug.Log(targetVec);
 
         float deltaX = q.eulerAngles.x;
         deltaX = remapRad(deltaX);
@@ -283,12 +289,12 @@ public class AIPilot : ScriptableObject
 
         Vector3 adjTarget = forwardVec;
 
-        if(Mathf.Abs(deltaY) < Mathf.Abs(deltaX) && Mathf.Abs(deltaY) < Mathf.Abs(deltaZ))
+        /*if(Mathf.Abs(deltaY) > Mathf.Abs(deltaX) && Mathf.Abs(deltaY) > Mathf.Abs(deltaZ))
         {
             deltaX = deltaX / Mathf.Abs(deltaY);
             deltaZ = deltaZ / Mathf.Abs(deltaY);
         }
-        else if(Mathf.Abs(deltaX) < Mathf.Abs(deltaZ) && Mathf.Abs(deltaX) < Mathf.Abs(deltaY))
+        else if(Mathf.Abs(deltaX) > Mathf.Abs(deltaZ) && Mathf.Abs(deltaX) > Mathf.Abs(deltaY))
         {
             deltaY = deltaY / Mathf.Abs(deltaX);
             deltaZ = deltaZ / Mathf.Abs(deltaX);
@@ -297,9 +303,9 @@ public class AIPilot : ScriptableObject
         {
             deltaX = deltaX / Mathf.Abs(deltaZ);
             deltaY = deltaY / Mathf.Abs(deltaZ);
-        }
+        }*/
 
-        adjTarget = Quaternion.Euler(deltaX, deltaY, deltaZ) * adjTarget * 100 + m_rigidbody.position;
+        adjTarget = targetVec * 100 + m_rigidbody.position;
         //Debug.Log(adjTarget);
         //Debug.Log(targetVec * 100 + m_rigidbody.position);
 

@@ -50,16 +50,22 @@ public class AIManager : MonoBehaviour
             Vector3 tar = planes[0].gameObject.transform.position;
             tar += planes[0].gameObject.transform.right * 25 * (i - (numAI / 2.0f));
             tar += planes[0].gameObject.transform.up * -10 * (Mathf.Abs(i - (numAI / 2.0f)) % 2);
+
+            Vector3 tarVec = tar - planes[i].gameObject.transform.position;
+            Vector3 goalVec = (tarVec.normalized * 0.25f + planes[0].gameObject.transform.forward * 0.75f);// * 0.5f;
+
+            tar = tarVec.magnitude * goalVec + planes[i].transform.position;
+
             planes[i].setTarget(tar);
 
-           // pos += planes[i].gameObject.transform.position;
+            //pos += planes[i].gameObject.transform.position;
             //dir += planes[i].gameObject.transform.forward;
-           // up += planes[i].gameObject.transform.up;
+            //up += planes[i].gameObject.transform.up;
         }
 
-        //dir = dir.normalized;
-        //up = up.normalized;
-        //pos = (pos / numAI) - dir * 100;
+        dir = dir.normalized;
+        up = up.normalized;
+        //pos = (pos / numAI);
         this.gameObject.transform.position = pos - dir * 100;
         this.gameObject.transform.up = up;
         this.gameObject.transform.forward = dir;
@@ -78,6 +84,7 @@ public class AIManager : MonoBehaviour
                 Vector3 tar = planes[0].gameObject.transform.position;
                 tar += planes[0].gameObject.transform.right * 20 * (i - numAI / 2);
                 tar += planes[0].gameObject.transform.up * -10 * Mathf.Abs(i - numAI / 2);
+
                 planes[i].setTarget(tar);
             }
             else
