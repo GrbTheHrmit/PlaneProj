@@ -52,7 +52,7 @@ public class AIManager : MonoBehaviour
             tar += planes[0].gameObject.transform.up * -10 * (Mathf.Abs(i - (numAI / 2.0f)) % 2);
 
             Vector3 tarVec = tar - planes[i].gameObject.transform.position;
-            Vector3 goalVec = (tarVec.normalized * 0.25f + planes[0].gameObject.transform.forward * 0.75f);// * 0.5f;
+            Vector3 goalVec = (tarVec.normalized + planes[0].gameObject.transform.forward) * 0.5f;
 
             tar = tarVec.magnitude * goalVec + planes[i].transform.position;
 
